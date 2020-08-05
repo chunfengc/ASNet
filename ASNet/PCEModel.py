@@ -1,11 +1,13 @@
 import torch
-import pdb
-from torch import nn
+#import pdb
+#from torch import nn
 import scipy.misc
 from sklearn.linear_model import LinearRegression
 #from copy import deepcopy
 import numpy as np
 
+# The PCE layer as given in step 2 of Algorithm 3.1 
+# The training procedure of the active subspace network (ASNet)
 class PCEModel():
     def __init__(self,mean,var,d=50,p=2,device=None):
         #super(PCEModel, self).__init__()
@@ -36,8 +38,7 @@ class PCEModel():
         return B
 
     
-    def PolyVal(self,x,oneDbasis):
-
+    def PolyVal(self,x,oneDbasis): 
         p = self.p
         [n,d] = x.shape
         x_pows = torch.zeros((n,d,p+1),dtype=torch.float32)
@@ -48,8 +49,7 @@ class PCEModel():
         for ip in range(p+1):
             for i in range(ip+1):
                 if oneDbasis[ip,i]!=0:
-                    polyval[:,:,ip] += oneDbasis[ip,i]*x_pows[:,:,i]
-
+                    polyval[:,:,ip] += oneDbasis[ip,i]*x_pows[:,:,i] 
         return polyval.to(self.device)
     
     
@@ -57,7 +57,7 @@ class PCEModel():
         mean = self.mean
         var = self.var
         idxset = self.idxset
-        p = self.p
+        #p = self.p
         d = len(mean)
         oneDbasis = self.oneDbasis
         assert(len(var)==d)

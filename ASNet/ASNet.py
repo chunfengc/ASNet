@@ -3,6 +3,41 @@ import torch.nn as nn
 import copy
 import warnings
 
+##  3.3. Active Subspace Network (ASNet)
+# including the premodel, the AS layer and the PCE layer
+
+class ASNET(nn.Module):
+    def __init__(self, pre_model,AS_model=None, 
+                 basis_layer=None,PCE_coeff=None,device='cuda',num_classes=10, AS_model_shape=None):
+        super(ASNET, self).__init__()
+        self.premodel = copy.deepcopy(pre_model)
+        if AS_model is not None:
+            self.AS = nn.Linear(AS_model.V.shape[0],AS_model.V.shape[1],  bias=False)
+            self.AS.weight.data = copy.deepcopy(AS_model.V).t() 
+        elif (AS_model_shape is not None) and (len(AS_model_shape) == 2):
+            self.AS = nn.Linear(AS_model_shape[0],AS_model_shape[1],  bias=False)
+        else:
+            raise ValueError('AS_model and AS_model_shape, At least one of them must be given')
+        if basis_layer is None:
+            raise ValueError('basis_layer must be given')
+        self.PCE_basis =  basis_layer
+        self.PCE = nn.Linear(basis_layer.nbasis, num_classes, bias=False) 
+        if PCE_coeff is not None:     
+            self.PCE.weight.data = copy.deepcopy(PCE_coeff).t()   
+    
+    def forward(self,x):
+        x = self.premodel(x)
+        x = x.view(x.size(0),-1)
+        x = self.AS(x) 
+        x = self.PCE_basis(x)
+        x = self.PCE(x)
+        
+        return x
+
+
+# To construct the PCE layer as (3.10) in the paper
+# We first project the r-dimensional AS output to (r+p,p) basis phi_alpha
+
 class BasisLayer(nn.Module): 
     def __init__(self, PCE_model=None, device=None):
         super(BasisLayer, self).__init__() 
@@ -26,7 +61,7 @@ class BasisLayer(nn.Module):
     def forward(self,x):
          return self.BasisMat(x)
         
-    # Basis Functions for normal distribution        
+    # Hermite Functions for normal distribution        
     def NormalBasis(self):
         p = self.p
         B = torch.zeros([p+1,p+1])
@@ -80,30 +115,3 @@ class BasisLayer(nn.Module):
 
 
     
-class ASNET(nn.Module):
-    def __init__(self, pre_model,AS_model=None, 
-                 basis_layer=None,PCE_coeff=None,device='cuda',num_classes=10, AS_model_shape=None):
-        super(ASNET, self).__init__()
-        self.premodel = copy.deepcopy(pre_model)
-        if AS_model is not None:
-            self.AS = nn.Linear(AS_model.V.shape[0],AS_model.V.shape[1],  bias=False)
-            self.AS.weight.data = copy.deepcopy(AS_model.V).t() 
-        elif (AS_model_shape is not None) and (len(AS_model_shape) == 2):
-            self.AS = nn.Linear(AS_model_shape[0],AS_model_shape[1],  bias=False)
-        else:
-            raise ValueError('AS_model and AS_model_shape, At least one of them must be given')
-        if basis_layer is None:
-            raise ValueError('basis_layer must be given')
-        self.PCE_basis =  basis_layer
-        self.PCE = nn.Linear(basis_layer.nbasis, num_classes, bias=False) 
-        if PCE_coeff is not None:     
-            self.PCE.weight.data = copy.deepcopy(PCE_coeff).t()   
-    
-    def forward(self,x):
-        x = self.premodel(x)
-        x = x.view(x.size(0),-1)
-        x = self.AS(x) 
-        x = self.PCE_basis(x)
-        x = self.PCE(x)
-        
-        return x

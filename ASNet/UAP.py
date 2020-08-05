@@ -1,12 +1,13 @@
 import numpy as np
-import pdb
-import numpy as np
-from torch.autograd import Variable
+#import pdb
+#import numpy as np
+#from torch.autograd import Variable
 import torch as torch
-import copy
-from torch.autograd.gradcheck import zero_gradients
+#import copy
+from torch.autograd.gradcheck import zero_gradients 
 
-# # The original code   
+
+ 
 def compute_grad_matrix2(x, fx):
     assert x.requires_grad
     num_classes = fx.shape[1]
@@ -19,28 +20,19 @@ def compute_grad_matrix2(x, fx):
         fx.backward(grad_output, retain_graph=True)
         jacobian[i] = x.grad.data
     #jacobian = jacobian.transpose(0, 1).contiguous()
-    # (n_classes x n_samples ) × n_features
+    # (n_classes x n_samples ) × n_features
     # n_outputs = jacobian.shape[1]
     return jacobian#.view(jacobian.shape[0] * jacobian.shape[1], -1)
  
-def proj_lp(v, xi, p):
-
-    # Project on the lp ball centered at 0 and of radius xi
-
-    # SUPPORTS only p = 2 and p = Inf for now
-    if p == 2:
-        v = v * min(1, xi/torch.norm(v))
-        # v = v / np.linalg.norm(v.flatten(1)) * xi
-    elif p == np.inf:
-        v = torch.sign(v) * torch.min(torch.abs(v), torch.ones(v.shape).to(v.device))
-    else:
-         raise ValueError('Values of p different from 2 and Inf are currently not supported...')
-
-    return v
 
 
-def deepfool(image, f,device, grads=compute_grad_matrix2, num_classes=10, overshoot=0.02, max_iter=50):
 
+# The UAP is our baseline from the paper
+# S.-M. Moosavi-Dezfooli, A. Fawzi, O. Fawzi, and P. Frossard, 
+# Universal adversarial perturbations, in Proceedings of the 
+#IEEE conference on computer vision and pattern recognition, 2017, pp. 1765–1773.
+
+def deepfool(image, f,device, grads=compute_grad_matrix2, num_classes=10, overshoot=0.02, max_iter=50): 
     """
        :param image: Image of size HxWx3
        :param f: feedforward function (input: images, output: values of activation BEFORE softmax).
@@ -187,30 +179,20 @@ def universal_perturbation(dataset, model,est_labels_orig=None, device='cpu',xi=
         
     print('    UAP: iteration {}/{}, attack ratio {:.2f}/{:.2f}, |v|={:.2f}'.format(
                 itr, max_iter_uni,fooling_rate, 1-delta,torch.norm(v)))
+    return v   
+
+def proj_lp(v, xi, p):
+
+    # Project on the lp ball centered at 0 and of radius xi
+
+    # SUPPORTS only p = 2 and p = Inf for now
+    if p == 2:
+        v = v * min(1, xi/torch.norm(v))
+        # v = v / np.linalg.norm(v.flatten(1)) * xi
+    elif p == np.inf:
+        v = torch.sign(v) * torch.min(torch.abs(v), torch.ones(v.shape).to(v.device))
+    else:
+         raise ValueError('Values of p different from 2 and Inf are currently not supported...')
+
     return v
 
-# class_idx = 1
-# bs = 100
-# train_loader_one_class = load_mnist_fashion_train(bs,class_label=class_idx)
-# test_loader_one_class = load_mnist_fashion_test(bs,class_label=class_idx)
-
-# model = Net()
-# pretrained = '/home/cfcui/NIPS/ASNet/model/MNIST/best_mnist_fashion_model.pth'
-# tmp = torch.load(pretrained)
-# model.load_state_dict(tmp)
-
-# file_perturbation = os.path.join('results', 'universal_permute.npy')
-
-# if os.path.isfile(file_perturbation) == 0:
-    
-#     num_image = 100
-#     dataset = torch.zeros([num_image,1,28,28])
-#     for i in range(dataset.shape[0]):
-#         dataset[i] = train_loader_one_class.dataset[i][0]
-
-#     v = universal_perturbation(dataset, , compute_grad_matrix)
-#     np.save(os.path.join(file_perturbation), v)
-# else:
-#     print('>> Found a pre-computed universal perturbation! Retrieving it from ", file_perturbation')
-#     v = np.load(file_perturbation)
-    

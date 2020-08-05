@@ -1,13 +1,13 @@
 import torch
-from IPython import display
+#from IPython import display
 import torch.nn.functional as F
 import torch.nn as nn
-import matplotlib.pyplot as plt 
+#import matplotlib.pyplot as plt 
 
-import pdb
+#import pdb
 
 
-## Talget's code
+##  compute the top-k accuracy of model for dataset=test_loader
 def compute_loss(model, device, test_loader,is_print=True,topk=[1]):    
     model.eval()
     model.to(device)
@@ -38,10 +38,12 @@ def compute_loss(model, device, test_loader,is_print=True,topk=[1]):
     else:
         return test_accuracy
 
+## The soft-thresholding for l1 regularized proximal gradient
 def soft_threshold(x,lmd=0.1): 
     x = x*torch.relu(1-lmd/(1e-30+torch.abs(x))) 
     return x
 
+## To retrain the model on the dataset=train_loader
 def train(model, device, train_loader, optimizer,lr_decrease=None,epoch=1):
     model.train().to(device)
     correct = 0.0
@@ -61,10 +63,14 @@ def train(model, device, train_loader, optimizer,lr_decrease=None,epoch=1):
             param_group['lr'] *= lr_decrease 
     else:
         for param_group in optimizer.param_groups:
-            param_group['lr'] = param_group['lr'] * (epoch)/(epoch+1)
-            
+            param_group['lr'] = param_group['lr'] * (epoch)/(epoch+1) 
     return accuracy
 
+## retraining the model with l1 regularization
+## lmd is the parameter for the AS layer and the PCE layer
+## lmd2 is the parameter for the premodel
+## when both lmd and lmd2 equals to zero, then this algorithm reduced to train()
+    
 def train_l1(model, device, train_loader, optimizer,train_max_batch,lmd = 0.1,lmd2=0.1,
             lr_decrease=None,epoch=1):
     model.train().to(device)
@@ -107,7 +113,8 @@ def train_l1(model, device, train_loader, optimizer,train_max_batch,lmd = 0.1,lm
             param_group['lr'] = param_group['lr'] * (epoch)/(epoch+1)
     return accuracy
 
-
+## retraining the model with knowledge distillation
+## when alpha=0, it reduced to the original training
 def train_kd(student, teacher, device, train_loader, optimizer, train_max_batch, 
              alpha=0.0, temperature=1.,lr_decrease=None, epoch=1):
     student.train()
