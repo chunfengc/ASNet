@@ -22,13 +22,20 @@ import torch.nn.functional as F
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-device=torch.device('cuda')
+if torch.cuda.is_available():
+    device=torch.device('cuda')
+else:
+    device = torch.device('cpu')
 
 
 # # Model
 model = Net()
 pretrained = '../model/MNIST/best_mnist_fashion_model.pth'
-tmp = torch.load(pretrained)
+if torch.cuda.is_available():
+    tmp = torch.load(pretrained)
+else:
+    tmp = torch.load(pretrained, torch.device('cpu'))
+    
 model.load_state_dict(tmp)
 model.to(device).eval()
 seq_model = get_seq_model(model)

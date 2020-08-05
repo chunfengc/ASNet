@@ -23,8 +23,10 @@ import torch.nn.functional as F
 from collections import OrderedDict 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-device=torch.device('cuda')
-
+if torch.cuda.is_available():
+    device=torch.device('cuda')
+else:
+    device = torch.device('cpu')
  
 class_idx = 1
 bs = 100
@@ -67,7 +69,10 @@ def load_model(modelname):
     if modelname == 'vgg19':
         model = vgg19_bn(num_classes=10)
         pretrained = '../model/CIFAR10/vgg19_bn/model_best.pth.tar'
-        tmp = torch.load(pretrained)
+        if torch.cuda.is_available():
+            tmp = torch.load(pretrained)
+        else:
+            tmp = torch.load(pretrained, torch.device('cpu'))
         model.load_state_dict({''.join(k.split('.module')) : v for k,v in tmp['state_dict'].items()})
         model.to(device).eval() 
         train_loader_one_class = trainloader_cifar_vgg19(bs,shuffle=False,class_label=class_idx)
@@ -87,7 +92,10 @@ def load_model(modelname):
         pretrained = '../model/ResNet/{}.th'.format(modelname)
         # tmp = torch.load(pretrained)
         # model.load_state_dict(tmp['state_dict'])
-        tmp = torch.load(pretrained, map_location=device)
+        if torch.cuda.is_available():
+            tmp = torch.load(pretrained)
+        else:
+            tmp = torch.load(pretrained, torch.device('cpu'))
         sd = OrderedDict()
         for key, item in tmp['state_dict'].items():
             key_s = key.split('.', 1)[1]

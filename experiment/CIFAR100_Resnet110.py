@@ -17,8 +17,10 @@ from ASNet.ASNet import *
 from model.resnet import *# resnet20,resnet32,resnet44,resnet56,resnet110#1202
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 #torch.cuda.set_device(0)
-device= 'cuda:0'
-
+if torch.cuda.is_available():
+    device=torch.device('cuda')
+else:
+    device = torch.device('cpu')
 
 bs = 128
 num_class = 100
@@ -32,8 +34,10 @@ modelname = 'resnet110'
 model = resnet110(num_class)
     
 pretrained = '../model/ResNet/model_resnet110_cifar100.th'
-
-tmp = torch.load(pretrained)
+if torch.cuda.is_available():
+    tmp = torch.load(pretrained)
+else:
+    tmp = torch.load(pretrained, torch.device('cpu'))
 model.load_state_dict(tmp['state_dict'])
 model.to(device)
 model.eval()

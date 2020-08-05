@@ -22,13 +22,18 @@ import torch.nn.functional as F
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-device=torch.device('cuda')
-
+if torch.cuda.is_available():
+    device=torch.device('cuda')
+else:
+    device = torch.device('cpu')
 # model
 num_classes=100
 model = vgg19_bn(num_classes=num_classes)
 pretrained = '../model/CIFAR100/vgg19_bn/model_best.pth.tar'
-tmp = torch.load(pretrained)
+if torch.cuda.is_available():
+    tmp = torch.load(pretrained)
+else:
+    tmp = torch.load(pretrained, torch.device('cpu'))
 model.load_state_dict({''.join(k.split('.module')) : v for k,v in tmp['state_dict'].items()})
 #model.load_state_dict(tmp['state_dict'])
 model.to(device).eval()
