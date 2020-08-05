@@ -1,8 +1,9 @@
 import torch
-import torch.nn as nn
+#import torch.nn as nn
 from .ASModel import *
-import pdb 
+#import pdb
 
+# projection v to \|v\|\le xi
 def proj_v(v, xi, proj_type='l2'):
     v2 = v.clone()
     if proj_type=='l0':
@@ -18,6 +19,9 @@ def proj_v(v, xi, proj_type='l2'):
     else:
         return v2*min(1,xi/torch.norm(v2))
 
+# This is a subalgorithm for AS_attack_input_small_dataset_sz
+# the backtracking method to compute the stepsize sz and its sign
+# given the previous perturbation vector v_AS and the update step dv = v_AS_i
 def AS_attack_update_sz(model, dataset, dataset_labels, xi,v_AS, v_AS_i, attack_ratio_old,
                         proj_type='l2', device='cpu', 
                         szmax = 2, maxiter=10, decrease_cons = 0.5):
@@ -59,16 +63,19 @@ def AS_attack_update_sz(model, dataset, dataset_labels, xi,v_AS, v_AS_i, attack_
                 break
         sz*=decrease_cons
         
-    return v_AS_best,attack_ratio_best, unattacked_idx, sz_best
+    return v_AS_best, attack_ratio_best, unattacked_idx, sz_best
 
-    
+
+# The Recursive Active Subspace for Universal Attack in Algorithm 4.1
+# We call two subalgorithms: 
+    # 1. get_AS_transform_input_smalldataset() to compute the dominant AS direction
+    # 2. AS_attack_update_sz() to obtain the stepsize
 def AS_attack_input_small_dataset_sz(model,dataset, dataset_labels, 
                               noise_level, loss, proj_type='l2',max_iter = 100, 
                               attack_target = None, r_max=1,device='cpu',szmax=None,
                               no_progress_stop=10):
     
-    v_AS = torch.zeros([1,*dataset.shape[1:]]).to(device)
-    sign_v = 1
+    v_AS = torch.zeros([1,*dataset.shape[1:]]).to(device) 
     dataset = dataset.to(device)
     if len(dataset_labels)==1:
         dataset_labels = dataset_labels.to(device).repeat(dataset.shape[0])
